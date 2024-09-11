@@ -20,24 +20,21 @@ void servirComida(int id)
 
         //METER A MANUCHO COMIENDO POR ACA;
 
-        // Espera hasta que un mozo este disponible (disminuye el semaforo)
-        sem_wait(&mozosDisponibles);
-        // Simula el tiempo que el mozo tarda en servir al invitado
-        printf("Mozo esta sirviendo al invitado \n");
-        sleep(2); // El mozo sirve al invitado
-         // El invitado comienza a comer
-        printf("Invitado esta comiendo.\n");
-        sleep(5); // Simulamos que el invitado esta comiendo
-        // El mozo ha terminado de servir al invitado y queda disponible
-        printf("Invitado ha terminado de comer.\n");
-        sem_post(&unComensalLibre); //lo libero para que este disponible para responder
-        sem_post(&mozosDisponibles); // El mozo queda disponible nuevamente
+
+        sem_wait(&mozosDisponibles);    // Espera hasta que un mozo este disponible (disminuye el semaforo)
+        printf("Mozo esta sirviendo al invitado %d.\n", id);
+        sleep(1);                       // Simula el tiempo que el mozo tarda en servir al invitado
+        printf("Invitado %d esta comiendo.\n", id);
+        sleep(3);                       // Simulamos que el invitado esta comiendo
+        printf("Invitado %d ha terminado de comer.\n", id);
+        sem_post(&unComensalLibre);     // Una vez el invitado termino de comer, lo libero para que haga la pregunta.
+        sem_post(&mozosDisponibles);    // Libero al mozo.
 }
 
 void* levantarse(int id)
 {
         sem_wait(&manuchoSentado);
-        printf("Comensal se levanto de la mesa.\n");
+        printf("Comensal %d se levanto de la mesa.\n", id);
         sem_post(&comenzalesSentados);
         sem_post(&manuchoSentado);
 }
@@ -45,7 +42,7 @@ void* levantarse(int id)
 void* sentarse(int id)
 {
         sem_post(&comenzalesSentados);
-        printf("Invitado se sento\n");
+        printf("Invitado %d se sento.\n", id);
 }
 
 void* lanzar_pregunta()
@@ -56,12 +53,11 @@ void* lanzar_pregunta()
         sem_post(&manuchoLanzoPregunta);
 }
 
-void* lanzar_respuesta(int comenzal_id)
+void* lanzar_respuesta(int id)
 {
         sem_wait(&manuchoLanzoPregunta);//Si ya se hizo la pregunta
         sem_wait(&unComensalLibre);
-        //int comenzal= comenzal_id; //ATENCION:::::Esto me da violacion de segmento revisar despues de dormir
-        printf("Comenzal: Francia tiene potencial.\n"); //Se deberia decir el id del comenzal que responde? quedaria mas bonito? aporta algo?
+        printf("Comenzal %d: Francia tiene potencial.\n", id); //Se deberia decir el id del comenzal que responde? quedaria mas bonito? aporta algo?
         sem_post(&comenzalLanzaRespuesta);
         sem_post(&unComensalLibre);
 }
