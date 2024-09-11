@@ -3,46 +3,61 @@
 # include <stdlib.h>
 # include <pthread.h>
 # include <semaphore.h>
+# include <string.h>
+
 int m = 3; //Cant de mozos
 int n = 4; //Cant de invitados
+int comenzalesSentados = 0; //Cant de comenzales sentados al inicio
 
 //Semaforos a utilizar
 sem_t manuchoSentado;
 sem_t manuchoComiendo;
-sem_t comenzalesSentados;
+sem_t todosComenzalesSentados;
 sem_t manuchoLanzoPregunta;
 sem_t comenzalLanzaRespuesta;
 sem_t mozosDisponibles;
 sem_t unComensalLibre;
 
 void servirComida(int id)
-{ //id de invitado
+{
+        sem_wait(&manuchoSentado);      //La primera vez se espera a que marucho se siente para empzar a servir.
+        sem_post(&manuchoSentado);
 
-        //METER A MANUCHO COMIENDO POR ACA;
-
+        char comenzal[20];
+        if(id == 0){
+                strcpy(comenzal, "Manucho");    //El string comenzal vale "Manucho" si el Id que me llego es 0
+        }else{
+                snprintf(comenzal, sizeof(comenzal), "invitado %d", id);
+        }
 
         sem_wait(&mozosDisponibles);    // Espera hasta que un mozo este disponible (disminuye el semaforo)
-        printf("Mozo esta sirviendo al invitado %d.\n", id);
-        sleep(1);                       // Simula el tiempo que el mozo tarda en servir al invitado
-        printf("Invitado %d esta comiendo.\n", id);
-        sleep(3);                       // Simulamos que el invitado esta comiendo
-        printf("Invitado %d ha terminado de comer.\n", id);
-        sem_post(&unComensalLibre);     // Una vez el invitado termino de comer, lo libero para que haga la pregunta.
-        sem_post(&mozosDisponibles);    // Libero al mozo.
+        printf("Mozo esta sirviendo a %s.\n", comenzal);
+        sleep(3);                       // Simula el tiempo que el mozo tarda en servir al invitado
+        sem_post(&mozosDisponibles);    // Una vez que se sirvio el plato libero al mozo.
+        printf("%s esta comiendo.\n", comenzal);
+        sleep(5);                       // Simulamos que el invitado esta comiendo
+        printf("%s ha terminado de comer.\n", comenzal);
+
+        if(id != 0){                    // Una vez el invitado termino de comer, lo libero para que haga la pregunta.
+                sem_post(&unComensalLibre);
+        }                               //Si el que termino de comer no es un invitado si no marucho, sigo como si nada.
 }
 
 void* levantarse(int id)
 {
         sem_wait(&manuchoSentado);
         printf("Comensal %d se levanto de la mesa.\n", id);
-        sem_post(&comenzalesSentados);
+        sem_post(&todosComenzalesSentados); //????
         sem_post(&manuchoSentado);
 }
 
 void* sentarse(int id)
 {
-        sem_post(&comenzalesSentados);
+        comenzalesSentados++;
         printf("Invitado %d se sento.\n", id);
+        if(comenzalesSentados == n){
+                sem_post(&todosComenzalesSentados);
+        }
 }
 
 void* lanzar_pregunta()
@@ -64,7 +79,7 @@ void* lanzar_respuesta(int id)
 
 void* sentarse_manucho()
 {
-        sem_wait(&comenzalesSentados);  //Necesito saber si todos los comenzales se sentaron //Quiero ese recurso //Bueno se entiende
+        sem_wait(&todosComenzalesSentados);     //Necesito saber si todos los comenzales se sentaron //Quiero ese recurso //Bueno se entiende
         printf("Manucho se sento.\n");
         sem_post(&manuchoSentado);
 }
@@ -97,10 +112,10 @@ void* invitados(void* arg)
 }
 
 //Comportamiento de Manucho.
-void* manucho(void* par)
+void* manucho(void* arg)
 {
         sentarse_manucho();
-        comer_manucho();                //Este no esta terminado porque aun no esta mozos ni cuando le sirven
+        servirComida(0);
         lanzar_pregunta();
         enojarse();
         pthread_exit(NULL);
@@ -115,11 +130,11 @@ int main () {
 
         //Inicializo semaforos y les defino su primer estado
         sem_init(&manuchoSentado, 0, 0);//Este semaforo se va a usar para que los mozos esperen a que marucho se siente para servir
-        sem_init(&comenzalesSentados, 0 ,n);
+        sem_init(&todosComenzalesSentados, 0 ,0);
         sem_init(&manuchoComiendo,0,0);
         sem_init(&manuchoLanzoPregunta,0,0);
         sem_init(&comenzalLanzaRespuesta,0,0);
-        sem_init(&mozosDisponibles, 0, m);
+        sem_init(&mozosDisponibles, 0, m);      //Mozos disponibles dado por M
         sem_init(&unComensalLibre,0,0);
 
         //Hilo para manucho
@@ -128,7 +143,7 @@ int main () {
         //Hilos para los invitados
         for (int i = 0; i < n; i++)     //Instancio los mozos y los mando a hacer su funcion "principal"
         {
-                id_invitados[i] = i + 1;//Conforme se van asignando threads, voy guardando sus ID
+                id_invitados[i] = i + 1;//Conforme se van asignando threads, voy armando sus IDs desde 1 a N
                 pthread_create(&hilos_invitados[i], NULL, *invitados, &id_invitados[i]); //Inicializo los invitados, los mando a hacer su funcion, y como parametro le paso a cada uno su ID
         }
 
