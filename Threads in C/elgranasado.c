@@ -40,7 +40,9 @@ void servirComida(int id)
 
         if(id != 0){                    // Una vez el invitado termino de comer, lo libero para que haga la pregunta.
                 sem_post(&unComensalLibre);
-        }                               //Si el que termino de comer no es un invitado si no marucho, sigo como si nada.
+        }else{                          //Si el que termino de comer es marucho
+                sem_post(&manuchoComiendo);
+        }
 }
 
 void* levantarse(int id)
@@ -91,13 +93,6 @@ void* enojarse()
         printf("Manucho: -Se enoja por la respuesta!-\n");
         printf("Manucho: -Se levanta de la mesa!-\n");
         sem_post(&manuchoSentado);      //Manucho se levanto de mesa!
-}
-
-void* comer_manucho()
-{ //ESTO esta mal debe comer cuando ya este atendido por un mozo, es solo para probar
-        sem_wait(&manuchoSentado);
-        printf("Manucho esta comiendo\n");
-        sem_post(&manuchoComiendo);
 }
 
 //Comportamiento invitados.
