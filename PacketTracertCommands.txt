@@ -1,0 +1,94 @@
+End devices > Computadora > Config 
+> Settings: Gateaway y DNS
+> FastEthernet: Dirección IP y mascara
+
+Network devices > Switches > 2960
+
+* Conectar Switches con PCs:
+Connections > Copper straight through
+> Click en computadora: FastEthernet
+> Click en switch: FastEthernet
+
+Network devices > Routers > 2901 || 2911 > Physical > Apagar el router > HWIC-2T (capa serial de 2 interfaces) 
+Click segunda barra de arriba del todo > Place Note > Cambiar el nombre de router a su ubicacion
+
+* Conectar Switches con Routers: 
+Connections > Copper striaght through
+> Click en switch: GigabitEthernet
+> Click en router: GigabitEthernet
+
+* Conectar Routers entre si:
+Connections > Serial DCE 
+>Click en router: Serial0
+
+Encender router > CLI > "Would you like to enter the initial configuration dialog?" NO > 
+Para configurar las interfaces LAN:
+$ enable (nos permite entrar en modo administrador a configurar todo el router, vas a ver que el prompt cambia de ">" a "#")
+
+$ configure terminal (nos mete en modo configurar placas de red)
+
+$ hostname [nombre de la placa] 
+Por ejemplo: $ hostname Sanmiguel
+
+$ interface [placa] (para meternos a una placa de red particular)
+Por ejemplo: $ interface GigabitEthernet 0/0
+
+$ ip address [IP] [MASCARA] (para darle esa IP a la placa)
+Por ejemplo: $ ip address 10.1.1.254 255.255.255.0
+
+$ description [texto] (añade una descripción a la placa para tener datos)
+Por ejemplo: $ description Conectada a la LAN de SanFer
+
+$ no shutdown (levanta la placa de red, por default el SO de cisco las deja apagadas)
+
+$ exit (nos saca de la placa)
+
+$ exit (nos saca de modo admin)
+
+$ copy running-config startup-config (copia la configuración actual al archivo de booteo para que si se reinicia el router no perdamos toda la config)
+
+$ reload (reiniciar)
+
+
+
+CONFIGURAR INTERFACE WAN:
+$ enable 
+
+$ configure terminal
+
+$ interface Serial [numero]
+
+$ ip address [ip publica] [mascara publica]
+
+$ description [texto]
+
+$ clock rate 64000 (configura el reloj del enlace wan a 64000)
+
+$ no shutdown {esto va a tirar error. Porque? porque hay que hacer la misma configuracion de los 2 lados del enlace WAN para establecer el clock}
+
+$ exit
+
+$ copy running-config startup-config
+
+
+
+ENRUTAMIENTO: 
+$ show ip route (muestra todas las IP que conoce el router)
+
+$ ena (mismo que enable)
+
+$ conf t (mismo que configure terminal)
+
+$ router ? (muestra todos los protocolos de enrutamiento que conoce el router)
+
+$ router rip (entra en el protocolo 2)
+
+$ version 2 (para que use la version 2 de RIP que acepta subredes)
+
+$ network [direccion de RED {IP que termina en 0}] (indica que redes publicar /intercambiar con otros routers. Aca aunciamos las subredes conectadas al router Y TAMBIEN sus IP publicas.)
+
+$ ctrl Z (te devuelve al modo enable)
+
+$ copy run st (mismo que running-config startup-config)
+
+$ debug ip rip  (pone en la consola conforme se va a actualizando la tabla de routeo)
