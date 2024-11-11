@@ -27,7 +27,7 @@ $ enable (nos permite entrar en modo administrador a configurar todo el router, 
 
 $ configure terminal (nos mete en modo configurar placas de red)
 
-$ hostname [nombre de la placa] 
+$ hostname [nombre del router]  (nos permite cambiar el nombre al router)
 Por ejemplo: $ hostname Sanmiguel
 
 $ interface [placa] (para meternos a una placa de red particular)
