@@ -1,0 +1,39 @@
+Make your program in C using #include <mpi.h>
+Compile with: $ mpicc helloWorld.c -o helloWorld
+
+To run the code as is execute with: $ srun --mpi=pmix -n [number of processing units] ./helloWorld
+
+Otherwise, you should make a bash script that runs the code. For that make a helloWorld-mpi.sh:
+"#!/bin/bash
+#SBATCH --nodes=4			//Number of nodes
+#SBATCH --ntasks-per-node=4		//Number of process per node
+#SBATCH --output=mpi-out.%j		//This will make a file named mpi-out.[PID] with the output in case of success
+#SBATCH --error=mpi.err.%j		//This will make a file with logs in case of error, called mpi.err.[PID]
+#SBATCH --time=00:00:00			//Delay the execution of the job: 0.
+#SBATCH --partition=cronos		
+
+cd $SLURM_SUBMIT_DIR
+mpirun helloWorld"			//Program to run
+
+Then run with: $ sbatch ./helloWorld.sh
+
+More slurm commands:
+$ sinfo 		//Cluster and nodes state
+$ squeue 		//Queued jobs 
+|
+|--> PD: Pending
+|--> R: Running
+|--> CF: Configuring 
+|--> CG: Completing (job is about to finish)
+|--> CD: Commpleted successfully 
+|--> F: Failed
+|--> TO: Time out
+|--> NF: Node Failure
+|--> RV: Revocked
+|--> SE: Special Exit
+|--> S: Suspended
+v
+C: Cancelled
+
+$ scancel [jobID]	//Cancels a job
+$ sbatch [script] 	//Executes a job in SLURM
