@@ -1,2 +1,4 @@
 *.mp4
 *.pptx
+*.zip
+/Networking/Videos/**
