@@ -19,6 +19,7 @@ int main(int argc, char **argv)
 //GrandTotal va a ser manipulada por el root, va a ser quien "sume las sumatorias"
 
         MPI_Init(&argc, &argv);  //Inicio Message Passing Interface con todos los argumentos que le haya pasado al programa por cli.
+//Se crean copias del mismo codigo para cada proceso
 //MPI_COMM_WORLD: Es un comunicador de MPI que representa a todos los procesos en el programa
 
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);   //Settea la variable Rank con un int que representa unicamente al proceso actual que ejecuta el codigo.
@@ -49,7 +50,7 @@ int main(int argc, char **argv)
         if (myend > right)
         {
                 myend = right + 1 ;
-                sum = root; // Suma localmente en cada proceso MPI 
+                sum = root; // Suma localmente en cada proceso MPI
         }
         if (mystart <= right)
         {
@@ -82,7 +83,6 @@ Se le pasa como parametro: La variable en todos los procesos distribuidos, la va
         MPI_Finalize();
         return 0;
 }
-
 
 // #include "mpi.h"
 // #include <stdio.h>
