@@ -1,0 +1,20 @@
+OpenMP es una API que permite expresar y obtener paralelismo en programas escritos en C, C++, Fortran y Python. Trabaja con un modelo de memoria compartida, es decir, todas las unidades de ejecución tienen acceso a un mismo espacio de memoria.
+
+Utiliza directivas o clausulas:
+"#pragma omp parallel"
+
+Esta es la directiva que le indica al compilador que se ha llegado a una región paralela. Se crean nuevos hilos que ejecutarán el código contenido dentro de la región en paralelo. Por default, la cantidad de hilos que se utilizaran se encuentra definido en una variable de entorno como "4".
+
+Directivas "Sections" y "Section", me permiten darle un bloque de código especifico a cada hilo individua, en vez de darle el mismo código a todos los hilos. 
+
+Clausulas:
+* "shared, private, default" me permiten establecer de forma explicita las variables como compartidas o privadas.
+
+#pragma omp parallel default(shared) private(var)
+#pragam omp parallel shared(var1) private(var2)
+#pragam omp parallel default(none) public(miVariable) private(laOtraVariable)
+
+
+* "reduction( [operation] : [list])" me permite ejecutar una operación de reducción de algún tipo, como una sumatoria de una lista de números.
+
+#pragma omp parallel for reduction(+:sum)

@@ -7,4 +7,4 @@
 #SBATCH --partition=cronos
 
 cd $SLURM_SUBMIT_DIR
-mpirun secuencial
+mpirun secuential
