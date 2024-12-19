@@ -1,3 +1,18 @@
+compilar con: 
+gcc –fopenmp miPrograma.c -o miPrograma
+
+ejecutar:
+sbatch miPrograma.SH
+
+miPrograma.sh:
+#!/bin/bash
+#SBATCH --nodes=1
+#SBATCH --output=omp-out.%j
+#SBATCH --error=omp-err.%j
+#SBATCH --partition=cronos
+export OMP_NUM_THREADS=4
+./miPrograma
+
 OpenMP es una API que permite expresar y obtener paralelismo en programas escritos en C, C++, Fortran y Python. Trabaja con un modelo de memoria compartida, es decir, todas las unidades de ejecución tienen acceso a un mismo espacio de memoria.
 
 Utiliza directivas o clausulas:
