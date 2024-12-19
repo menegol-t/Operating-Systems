@@ -27,7 +27,7 @@ int main(int argc, char **argv)
 {
         //Voy a hardcodear el largo y ancho de la matriz. Si lo quiero cambiar, solo cambio estas variables.
         int alto = 3;
-        int ancho = 3;
+        int ancho = 150;
         int matriz[alto][ancho];
         int rank, size;
 
@@ -42,7 +42,7 @@ int main(int argc, char **argv)
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);
         MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-        //Si estoy en el proceso principal
+// ---------------------------------------------------------- Proceso pricipal ---------------------------------------------------------------------------
         if(rank == 0)
         {
                 //Llamo una funcion que rellene la matriz arbitrariamente. Tambien podria hardcodear los numeros.
@@ -51,60 +51,44 @@ int main(int argc, char **argv)
 /*
 Como repartir la carga en los procesos: El proceso root le va a pasar a los demas procesos un vector, fila por fila, de la matriz, para que calculen su sumatoria.
 Para distribuirlos, le damos la primera fila al primer proceso. La segunda al segundo y asi.
---> Que pasa si tengo mas carga que procesos disponibles?
-Si nos quedamos sin procesos y todavia quedan filas que asignar, entregamos la fila que queda por asignar al proceso 1, la siguiente al proceso 2 y asi vamos repitiendo hasta asignar todos los procesos.
 
 --> Que pasa si tengo mas procesos disponibles que carga para repartir? Los workers se quedan esperando mensajes que nunca recibieran.
 Por eso despues de mandar a los workers necesarios a trabajar, al resto les mando un mensaje con un tag que les diga "vos no tenes trabajo, recibi tu mensaje y corta"
 
+NOTA: El programa solo esta pensado para correr siempre y cuando la cantidad de vectores que conforman la matriz sea menor o igual a la cantidad de procesos disponibles.
+
 */
-                //Contador para balancear la asignacion de cada vector a cada proceso
-                int nroDeProceso = 1;
-                //El mensaje que le doy a todos los workers para que sepan si tienen que trabajar o no.En este caso, voy a enviar trabajo a tantos workers como filas tenga la matriz
+                //El mensaje que le doy a todos los workers para que sepan si tienen que trabajar o no. En este caso, voy a enviar trabajo a tantos workers como filas tenga la matriz
                 workerTrabajador = 1;
+
+                //Asigno a todas las filas a algun worker
                 for(int i = 0; i < alto; i++)
                 {
-                        //A todos los workers que van a trabajar, les envio el numero 1
-                        MPI_Send(&workerTrabajador, 1, MPI_INT, nroDeProceso, 0, MPI_COMM_WORLD);
+                        //A los workers a los que tenga trabajo para darles, les envio el numero 1.
+                        MPI_Send(&workerTrabajador, 1, MPI_INT, i + 1 , 0, MPI_COMM_WORLD);
 
-                        //A cada proceso le envio una fila de la matriz, su cantidad de elementos, el tipo de dato de cada uno, el nombre del proceso, un tag y el comunicador.
-                        MPI_Send(matriz[i], ancho, MPI_INT, nroDeProceso, 0, MPI_COMM_WORLD);
-
-                        nroDeProceso++;
-
-                        //Ponele que tengo una matriz de 6 filas y solo 3 procesos, bueno la cuarta fila la envio nuevamente al primer proceso, la quinta fila al segundo proceos, y asi hasta que no queden vectores sin asignar.
-                        if(nroDeProceso > size)
-                        {
-                                nroDeProceso = 1;
-                        }
+                        //A cada worker le envio como parametro: una fila de la matriz, su cantidad de elementos, el tipo de dato de cada uno, el nombre del proceso, un tag y el comunicador.
+                        MPI_Send(matriz[i], ancho, MPI_INT, i + 1, 0, MPI_COMM_WORLD);
                 }
 
-                //Aca le envio la señal "0" a todos los workers que no hace falta que trabajen si ese es el caso. Si no es el caso, por ejemplo tengo mas trabajo que procesos, esto nunca se da.
+                //Aca le envio la señal "0" a todos los workers que no hace falta que trabajen (por ej si mi matriz tiene 6 filas pero yo tengo 10 workers) para que los 4 workers que quedan no se queden colgados esperando trabajo.
                 workerTrabajador = 0;
 
+                //A todos los workers que sobran les digo finaliza el proceso.
                 for(int i = alto; i < size; i++)
                 {
                         MPI_Send(&workerTrabajador, 1, MPI_INT, i, 0, MPI_COMM_WORLD);
                 }
 
-                //En esta parte voy recibiendo el resultado de todos los procesos worker que trabajron
-                nroDeProceso = 1;
+// ----------------------- En esta parte voy recibiendo el resultado de todos los procesos a los que les di trabajo -------------------------------
 
                 for(int i = 0; i < alto; i++)
                 {
-                        //Primero vacio el vector de resultados de cualquier cosa que pudiese tener la memoria al iniciar el programa si no C lloriquea
+                        //Primero vacio el vector de resultados de cualquier cosa que pudiese tener la memoria al iniciar el programa
                         resultado[i] = 0;
 
                         //Las sumatorias que voy recibiendo las guardo en el vector resultado
-                        MPI_Recv(&resultado[i], 1, MPI_INT, nroDeProceso, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-
-                        //Utilizo esta variable para rotar por todos los procesos sacando sus resultados. Primero obtengo el del primer proceso, despues el segundo, y asi. Si estoy en el caso de que tenia mas sumatorias que calcular, que procesos disponibles, vuelvo a recibir la sumatoria del 1, despues el 2, y asi.
-                        nroDeProceso++;
-
-                        if(nroDeProceso > size)
-                        {
-                                nroDeProceso = 1;
-                        }
+                        MPI_Recv(&resultado[i], 1, MPI_INT, i + 1, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
                 }
 
                 //Muestro el resultado
@@ -112,10 +96,12 @@ Por eso despues de mandar a los workers necesarios a trabajar, al resto les mand
                 {
                         printf("Sumatoria fila nro %d: %d\n", i, resultado[i]);
                 }
+// ----------------------- Parte de los procesos worker ---------------------------------------------
         }else
         {
-                //A partir de aca, es el trabajo de los workers.
+                //Genero un vector para guardar el resultado
                 int vectorPorSumar[ancho];
+
                 //Inicializo la sumatoria en 0
                 int sumatoria = 0;
 
@@ -128,12 +114,13 @@ Por eso despues de mandar a los workers necesarios a trabajar, al resto les mand
                         //Recibo el vector a realizar la sumatoria del proceso root
                         MPI_Recv(vectorPorSumar, ancho, MPI_INT, 0, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
+                        //Recorro todo el vector que me dieron
                         for(int i = 0; i < ancho; i++)
                         {
                                 //Realizo la sumatoria de todos los numeros del vector
                                 sumatoria += vectorPorSumar[i];
                         }
-                        //Envio al sumatoria al proceso root.
+                        //Envio la sumatoria al proceso root.
                         MPI_Send(&sumatoria, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
                 }
         }
